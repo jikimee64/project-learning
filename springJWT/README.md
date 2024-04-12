@@ -55,3 +55,13 @@ public class SecurityConfig {
   - 세션 생성 정책을 STATELESS로 설정
   - JWT 방식을 사용하기 때문에 스프링 시큐리티에게 세션을 사용하지 않겠다고 지시
   - 따라서, **서버측 메모리에 세션을 저장하지 않아** 동일한 브라우저에서 요청하더라도 매번 새로운 사용자로 인식
+
+### 5장 DB연결 및 Entity 작성
+```java
+spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+```
+- spring.jpa.hibernate.naming.physical-strategy
+  - Hibernate의 테이블 이름, 칼럼 이름 등 DB의 물리적인 네이밍 전략을 설정하는 속성
+  - PhysicalNamingStrategyStandardImpl은 별도의 변환을 수행 하지 않고 엔티티에 정의된 이름 그대로 DB 스키마에 반영
+  - 기본 전략은 org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy
+    - 카멜케이스를 스네이크 케이슬 변환(소문자)
