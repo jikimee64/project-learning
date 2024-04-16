@@ -1,4 +1,4 @@
-## 추가로 조사 후 정리한 내용
+## 학습 정리
 
 ### 3장 Security Config 클래스 (STATELESS)
 ```java
@@ -65,3 +65,41 @@ spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.Ph
   - PhysicalNamingStrategyStandardImpl은 별도의 변환을 수행 하지 않고 엔티티에 정의된 이름 그대로 DB 스키마에 반영
   - 기본 전략은 org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy
     - 카멜케이스를 스네이크 케이슬 변환(소문자)
+
+### 7장 로그인 필터 구현
+- 필터
+  - WAS와 서블릿 사이에 특정 처리를 수행하는 곳
+  - HTTP 요청 -> WAS -> 필터1 -> 필터2 ... -> 서블릿 -> 컨트롤러
+- DelegatingFilterProxy란?
+  - 전통적인 서블릿 필터는 Spring IoC의 도움을 받을 수 없다.
+  -  DelegatingFilterProxy는 이러한 한계를 극복하기 위해 만들어진 클래스
+  - 서블릿 컨테이너의 필터 생명주기안에서 Spring의 FilterChainProxy 빈을 사용할 수 있다.
+  - FilterChainProxy 빈을 찾은뒤 해당 빈에게 시큐리티 필터링 작업을 위임한다.
+- FilterChainProxy
+  - 스프링 시큐리티의 필터들을 관리하고 제어한다.(순서 제어 등)
+![img.png](image/필터모식도.png)  
+---
+![img.png](image/로그인_모식도.png)
+- UsernamePasswordAuthenticationFilter
+  - 세션의 formLogin 방식으로 했으면 자동으로 적용이 되었다.
+  - 하지만 JWT 기반에서 formLogin을 disabled했기 때문에 기본적으로 활성화 되어 있는 UsernamePasswordAuthenticationFilter는 동작하지 않는다. 
+  - 따라서 상속을 받아서 직접 구현을 해줘야 동작한다.
+  - authenticationManager를 통해 인증을 진행할 수 있도록 토큰값을 만들어서 넘겨준다.
+  - 로그인 성공시 실행하는 메서드인 `successfulAuthentication`와 로그인 실패시 실행하는 메서드인 `unsuccessfulAuthentication`를 오버라이딩 하여 구현할 수 있다. 
+  - 기본 옵션
+    - /login PATH 경로 
+    - form-data, 필드값은 username, password 
+
+  - PATH 경로를 수정하고 싶을 경우
+  ```java
+  LoginFilter loginFilter = new LoginFilter(authenticationManager(authenticationConfigutration), jwtUtil);
+  loginFilter.setFilterProcessesUrl("경로설정");
+  
+  http
+      .addFilterAt(loginFilter, UsernamePasswrodAuthenticationFilter.class);
+  ```
+
+※ 스프링 시큐리티는 모든 처리를 필터단에서 처리한다.
+
+
+
