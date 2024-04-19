@@ -102,9 +102,6 @@ spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.Ph
 ※ 스프링 시큐리티는 모든 처리를 필터단에서 처리한다.
 
 ### 8장 DB기반 로그인 검증 로직
-```java
-
-```
 - LoginFilter의 authenticationManager.authenticate(authToken);가 UserDetailsService의 loadUserByUsername 메서드를 호출한다.
   - 하지만 UserDetailsService의 구현체는 단 하나여야 스프링 시큐리티가 찾을 수 있다. 
 - loadUserByUsername 메서드는 username을 받아서 계정이 존재하면 UserDetails를 반환한다.
@@ -114,3 +111,5 @@ spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.Ph
   - 즉, 사용자에게 받은 데이터와 DB에서 조회한 데이터를 검증하고 성공/실패를 판단하는 구현부분
   - DB에 암호화되어 저장되어 있다면 로그인시 입력되는 비밀번호는 DaoAuthenticationProvider에서 자동으로 암호화를 한다.
 
+### 9장 JWT 발급 및 검증 클래스
+- 사용한 암호화 알고리즘이 HS256이면 256비트(32byte)의 키값을 사용해야 한다.
