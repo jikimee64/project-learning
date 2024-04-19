@@ -113,3 +113,45 @@ spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.Ph
 
 ### 9장 JWT 발급 및 검증 클래스
 - 사용한 암호화 알고리즘이 HS256이면 256비트(32byte)의 키값을 사용해야 한다.
+
+### 10장 로그인 성공 JWT 발급
+- 토큰을 보낼떄 "Bearer {토큰}" 형식으로 보내야 할까?
+- HTTP 인증 방식은 RFC 7235 정의에 따라 아래 인증 헤더 형태를 가져야 한다.
+```text
+Authorization: 타입 인증토큰
+```
+
+- Bearer 인증 방식은 OAuth 2.0 프레임워크에서 사용하는 토큰 인증 방식이다.
+- "Bearer"은 소유자라는 뜻으로, "이 토큰의 소유자에게 권한을 부여해줘" 라는 의미이다.
+- Bearer 토큰은 OAuth 프레임워크에서 액세스 토큰으로 사용하는 토큰의 유형이다.
+- 토큰의 형태는 JWT를 사용하기도 한다.
+```text
+//예시
+Authorization: Bearer 인증토큰
+```
+ 
+- attemptAuthentication에선 UsernamePasswordAuthenticationToken을 생성시 principal에 username을 넣어줬다. 
+- successfulAuthentication에서는 principal은 CustomUserDetails 형태로 존재한다
+```java
+    @Override
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
+        //스프링 시큐리티에서 username과 password를 검증하기 위해서는 token에 담아야 함
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(username, password, null);
+
+        //token에 담은 검증을 위한 AuthenticationManager로 전달
+        return authenticationManager.authenticate(authToken);
+    }
+
+@Override
+protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) {
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+```
+
+- Authentication 인터페이스
+```java
+	 * @return the <code>Principal</code> being authenticated or the authenticated
+	 * principal after authentication.
+	 */
+	Object getPrincipal();
+```
+- 인증 전에는 사용자 이읻, 인증 후에는 인증된 사용자 정보를 반환한다. 
