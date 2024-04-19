@@ -155,3 +155,88 @@ protected void successfulAuthentication(HttpServletRequest request, HttpServletR
 	Object getPrincipal();
 ```
 - 인증 전에는 사용자 이읻, 인증 후에는 인증된 사용자 정보를 반환한다. 
+
+### 11장 JWT 검증 필터
+- JWTFilter에서 토큰을 검증하고 검증이 완료되면 SecurityContextHolder에 인증 정보(Authentication)를 등록한다.
+  - 값을 담는 추가적인 이유는 이후 시큐리티 필터에서도 인증 정보를 사용하기 위함이다. 
+- 이후 SecurityConfig에 등록한 requestMatchers를 검증하는 인가 필터가 동작하여 세션에서 해당 유저에 대한 role을 조회해서 접근 여부를 결정한다. 
+```java
+        //UserDetails에 회원 정보 객체 담기
+        CustomUserDetails customUserDetails = new CustomUserDetails(userEntity);
+
+        //스프링 시큐리티 인증 토큰 생성
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
+        //세션에 사용자 등록
+        SecurityContextHolder.getContext().setAuthentication(authToken);
+```
+
+```java
+        http
+                .authorizeRequests((auth) -> auth
+                        .requestMatchers("/login", "/", "/join").permitAll()
+                        .requestMatchers("/admin").hasRole("ADMIN")
+                        .anyRequest().authenticated()
+                );
+```
+
+- SecurityContextHolder에 생성되는 세션이 STATELESS한 이유는 SecurityConfig에서 세션을 STATELESS로 설정했기 때문이다.
+```java
+        // 세션 설정
+        http
+                .sessionManagement((session) -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                );
+```
+- SecurityFilterChain에 대한 세션 설정은 해당 SecurityFilterChain 범위에서만 적용된다
+- SecurityFilterChain 내부에 속해 있는 SecurityContextHolderFilter가 세션 관리를 진행하기 때문이다.
+- 따라서 다중 SecurityFilterChain 설정시 모든 필터에 대해서 각각 STATELESS 설정을 진행해야 합니다.
+```java
+   @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+            .antMatcher("/api/**")  // 첫 번째 필터 체인: API 경로
+                .authorizeRequests()
+                .anyRequest().hasRole("API_USER")
+                .and()
+            .httpBasic()
+            .and()
+            .sessionManagement()
+            .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+
+        http
+            .antMatcher("/admin/**")  // 두 번째 필터 체인: 관리자 경로
+                .authorizeRequests()
+                .anyRequest().hasRole("ADMIN")
+                .and()
+            .formLogin()
+            .and()
+            .sessionManagement()
+            .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
+    }
+```
+
+- 컨틀로러 단에서 인증 정보를 가져오는 방법
+```java
+    @GetMapping("/user")
+    public ResponseEntity<UserEntity> getUserInfo(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+        return ResponseEntity.ok(customUserDetails.getUserEntity());
+    }
+```
+- 인증이 완료된 사용자 정보를 가져오는 방법
+```java
+    @GetMapping("/user")
+    public ResponseEntity<UserEntity> getUserInfo() {
+        CustomUserDetails principal = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(principal.getUserEntity());
+    }
+``` 
+
+- JWTFilter에서 토큰을 받고 세션을 만든 후 LoginFilter 필터를 통과하지만 attemptAuthentication() 메서드는 동작하지 않는다.
+- LoginFilter는 LoginFilter <- UsernamePasswordAuthenticationFilter <- AbstractAuthenticationProcessingFilter 구조를 가진다
+- AbstractAuthenticationProcessingFilter 내부의 doFilter() 메서드가 /login 경로인지 체크한다. (세션 유무 검증은 X)
+  - 따라서, JWT를 가지고 /login 경로로 접근하는 유저는 UsernamePasswordAuthenticationFilter에서 막는 로직이 필요하다.
+  
+- OncePerRequestFilter란?
+  - 스프링의 서블릿 필터 중 하나로, 한 요청에 대해 한 번만 실행되도록 보장하는 필터다.
+  - 예를 들어, 하나의 요청안에서 url 포워딩을 시키면 다시 요청을 하는 셈인데, 이때 필터가 두 번 실행되는것을 방지한다.
+  - 인증, 인가와 같이 한번만 거쳐도 되는 필터에 사용된다.
