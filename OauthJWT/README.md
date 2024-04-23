@@ -106,3 +106,22 @@ spring.security.oauth2.client.provider.naver.user-name-attribute=response
 네이버의 응답값 최상위 필드는 resultCode, message, response이므로 response를 user_name으로 설정하고,
 이후 자바 코드로 response의 id를 user_name으로 지정한다.
 ```
+
+### 9장 OAuth2UserService 응답 받기
+- oauth2.0 의존성에 의해서 아래는 구현되어 있다. 
+  - OAuth2AuthorizationRequestRedirectFilter   
+  - OAuth2LoginAuthentacationFilter
+  - OAuth2LoginAuthencationProvider
+- 네이버와 구글에 맞게 데이터를 받기 위한 DTO를 분리
+- 네이버 데이터
+```json
+{
+  resultcode=00, message=success, response={id=123123123, name=개발자유미}
+}
+```
+- 구글 데이터
+```json
+{
+  resultcode=00, message=success, id=123123123, name=개발자유미
+}
+```
