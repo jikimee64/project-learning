@@ -125,3 +125,6 @@ spring.security.oauth2.client.provider.naver.user-name-attribute=response
   resultcode=00, message=success, id=123123123, name=개발자유미
 }
 ```
+
+### 10장
+- CustomOAuth2UserService.loadUser 에서 CustomOAuth2User를 반환해서 OAuth2LoginAuthencationProvider에게 반환해야 정상 로그인 작동함
