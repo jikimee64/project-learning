@@ -68,3 +68,41 @@
 
 ### 4장 동작 원리
 ![04-architecture.png](./image/04-architecture.png)
+
+### 5장 변수 역할
+- OAuth2를 구현하기 위해선 registration와 provider 정보를 입력해야 한다. 
+- registration은 아래 정보를 입력한다
+  - client-name: 서비스명
+  - client-id: 서비스에서 발급 받은 아이디
+  - client-secret: 서비스에서 발급 받은 비밀번호
+  - redirect-uri: 서비스에 등록한 우리쪽 로그인 성공 URI
+  - authorization-grant-type: 인증 방식
+  - scope: 리소스 서버에서 가져올 데이터 범위
+- provider는 아래 정보를 입력한다
+  - authorization-uri: 서비스 로그인 창 주소
+  - token-uri: 토큰 발급 서버 주소
+  - user-info-uri: 사용자 정보 획득 주소
+  - user-name-attribute: 응답 데이터 변수
+- provider 같은 경우 구글, okta, 페이스북, 깃허브는 내부적으로 데이터를 가지고 있어서 등록하지 않아도 된다.
+
+```yml
+#registration
+spring.security.oauth2.client.registration.naver.client-name=naver
+spring.security.oauth2.client.registration.naver.client-id=발급아이디
+spring.security.oauth2.client.registration.naver.client-secret=발급비밀번호
+spring.security.oauth2.client.registration.naver.redirect-uri=http://localhost:8080/login/oauth2/code/naver
+spring.security.oauth2.client.registration.naver.authorization-grant-type=authorization_code
+spring.security.oauth2.client.registration.naver.scope=name,email
+
+#provider
+spring.security.oauth2.client.provider.naver.authorization-uri=https://nid.naver.com/oauth2.0/authorize
+spring.security.oauth2.client.provider.naver.token-uri=https://nid.naver.com/oauth2.0/token
+spring.security.oauth2.client.provider.naver.user-info-uri=https://openapi.naver.com/v1/nid/me
+spring.security.oauth2.client.provider.naver.user-name-attribute=response
+```
+- 네이버는 회원 조회 시 JSON 형태로 반환되므로 user-name-attribute 값을 response로 설정
+```java
+스프링 시큐리티에서는 하위 필드를 명시할 수 없고, 최상위 필드만 user_name으로 설정이 가능하다. 
+네이버의 응답값 최상위 필드는 resultCode, message, response이므로 response를 user_name으로 설정하고,
+이후 자바 코드로 response의 id를 user_name으로 지정한다.
+```
