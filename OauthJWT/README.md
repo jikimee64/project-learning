@@ -1,4 +1,4 @@
-## 학습 정리
+## 스프링 OAuth2 클라이언트 JWT 학습 정리
 
 ### 2장 동작 원리와 프론트/백 책임 분배
 - Oauth2 Code Grant 동작 방식은 다음과 같다
@@ -128,3 +128,69 @@ spring.security.oauth2.client.provider.naver.user-name-attribute=response
 
 ### 10장
 - CustomOAuth2UserService.loadUser 에서 CustomOAuth2User를 반환해서 OAuth2LoginAuthencationProvider에게 반환해야 정상 로그인 작동함
+- 아래와 같은 예외 처리를 던지면 로그인 실패되어 failHandler를 구현하여 타게할 수 있다.
+  - null 반환시 annot invoke "org springframework security oauth2 core user OAuth2User getAuthorities() "because "oauth2User" 오류가 발생할 수 있음
+```java
+    OAuth2Error oAuth2Error = new OAuth2Error("error");
+    throw new OAuth2AuthenticationException(oAuth2Error, oAuth2Error.toString());
+```
+
+### 스프링 OAuth2 클라이언트 세션 12장 Client Registration
+- 이전에 yml에 등록한 registration와 provider를 클래스를 통해 직접 등록할 수 있다.
+- ClientRegistration
+  - 서비스별 OAuth2 클라이언트의 등록 정보를 가지는 클래스다.
+- ClientRegistrationRepository
+  - ClientRegistration의 저장소로 서비스별 ClientRegistration들을 가진다.
+  - 주로 인메모리를 사용한다.
+
+### 스프링 OAuth2 클라이언트 세션 13장 OAuth2AuthorizationRequestRedirectFilter
+- OAuth2AuthorizationRequestRedirectFilter는 요청을 받은 후 해당하는 서비스의 로그인 URI로 요청을 리디렉션 시킨다. 
+- 이때 서비스의 정보는 ClientRegistrationRepository에서 가져온다.
+
+### 스프링 OAuth2 클라이언트 세션 14장 OAuth2LoginAuthenticationFilter
+- OAuth2LoginAuthenticationFilter는 인증 서버에서 로그인을 성공한 뒤 우리 서버측으로 발급되는 CODE를 획득하고, 
+- CODE를 통해 Access 토큰과 User 정보를 획득하는 OAuth2LoginAuthenticationProvider를 호출하는 일련의 과정을 시작하는 필터입니다.
+- OAuth2LoginAuthenticationProvider는 OAuth2LoginAuthenticationFilter로 부터 호출 받아 전달 받은 정보를 통해 외부 인증 서버를 호출하여 Access 토큰을 발급 받습니다.
+- 이후 Access 토큰을 통해 외부 리소스 서버에서 유저 정보를 OAuth2UserService로 받습니다.
+
+### 스프링 OAuth2 클라이언트 세션 15장 OAuth2AuthorizedClientService
+- **아주 중요한 부분**
+- 인증서버에서 발급 받은 Access 토큰을 기본적으로 인메모리로 저장하고 있다.
+- DB에 저장해야 할 경우는 다음과 같다.
+  - 로그인 인증 이후 계속적으로 발급받은 토큰을 사용해야 할경우
+    - 가령 구글같은경우 발급받은 토큰으로 Googld API를 호출할 수 있다.
+  - 만약에 소셜 로그인 사용자 수가 증가하고 서버의 스케일 아웃 문제로 인해 각각의 서버마다 인메모리에 쌓이게 된다.
+-  인메모리 방식으로 구현한다면 주기적인 스케줄링을 통해 사용하지 않는 데이터를 삭제해야 한다. 
+- 따라서 DB에 해당 정보를 저장하기 위해선 OAuth2AuthorizedClientService를 직접 구현해야 한다.
+
+- 테이블 DDL
+```sql
+CREATE TABLE oauth2_authorized_client (
+  client_registration_id varchar(100) NOT NULL,
+  principal_name varchar(200) NOT NULL,
+  access_token_type varchar(100) NOT NULL,
+  access_token_value blob NOT NULL,
+  access_token_issued_at timestamp NOT NULL,
+  access_token_expires_at timestamp NOT NULL,
+  access_token_scopes varchar(1000) DEFAULT NULL,
+  refresh_token_value blob DEFAULT NULL,
+  refresh_token_issued_at timestamp DEFAULT NULL,
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  PRIMARY KEY (client_registration_id, principal_name)
+);
+```
+- client_registration_id: google, naver 형태로 저장
+- principal_name: 사용자의 이름(닉네임)
+
+- 고려할 사항(중요)
+- (client_registration_id, principal_name)가 겹치는 경우가 존재하면 테이블에 값이 오버 라이딩되는 현상이 발생한다.
+- 아래와 같은 경우 문제가 될 수 있다
+```java
+user : username / client_registration_id / principal_name
+user1 : bbbbbbbb / naver / 개발자유미
+user2 : aaaaaaaaa / naver / 개발자유미
+```
+- 위와 같이 client_registration_id와 principal_name이 겹칠 경우 새로운 row가 생성되지 않고 기존 데이터 위에 덮어 씌어짐
+- 만약 동시 로그인을 진행한다면 로그인에 실패할 수도 있을 것 같다.
+- 이를 해결하기 위해선 principal_name을 고유값으로 저장해야 한다.
+  - CustomOAuth2User의 getName()에서 고유값을 반환하도록 수정
