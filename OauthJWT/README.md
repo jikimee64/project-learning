@@ -76,7 +76,7 @@
   - client-id: 서비스에서 발급 받은 아이디
   - client-secret: 서비스에서 발급 받은 비밀번호
   - redirect-uri: 서비스에 등록한 우리쪽 로그인 성공 URI
-  - authorization-grant-type: 인증 방식
+  - authorization-grant-typ~~~~e: 인증 방식
   - scope: 리소스 서버에서 가져올 데이터 범위
 - provider는 아래 정보를 입력한다
   - authorization-uri: 서비스 로그인 창 주소
@@ -259,6 +259,39 @@ user2 : aaaaaaaaa / naver / 개발자유미
 - 스프링 부트에선 URL이 컨트롤러에 존재하지 않는 경우 내부적으로 예외 핸들러를 탄다.
 - 보통은 404를 띄우지만 스프링 시큐리티와 맞물려 로그인 페이지로 리다이렉션된다
 - 이를 해결하려면 해당 핸들러를 커스텀하여 다른 페이지로 리다이렉션 시키거나 상태코드를 응답하면 된다
+
+- jwt 토큰 만료 후 /login 페이지로 가지 못하는 현상
+- oauth2 인증 필터보다 jwtfilter가 앞에 존재하면 아래와 같은 오류가 발생할 수 있다.
+  - 재로그인
+  - jwt만료 -> 거절
+  - oauth2 로그인 실패 -> 재요청
+  - 무한루프
+- 따라서 jwtfilter를 OAuth2LoginAuthenticationFilter 뒤에 위치시키거나 jwtfilter 내부에 if문을 통해 특정 경로 요청은 넘어가도록 진행
+
+- SecurityConfig > filterChain
+```java
+//JWTFilter 추가
+http
+        .addFilterAfter(new JWTFilter(jwtUtil), OAuth2LoginAuthenticationFilter.class);
+```
+
+- JWTFilter > doFilterInternal
+```java
+String requestUri = request.getRequestURI();
+
+if (requestUri.matches("^\\/login(?:\\/.*)?$")) {
+
+    filterChain.doFilter(request, response);
+    return;
+}
+if (requestUri.matches("^\\/oauth2(?:\\/.*)?$")) {
+
+    filterChain.doFilter(request, response);
+    return;
+}
+```
+
+
 
 ### 18장
 #### 인가 코드 → 토큰 → 유저 정보 흐름의 책임에 관련된 부분
