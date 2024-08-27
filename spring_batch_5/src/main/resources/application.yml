@@ -1,0 +1,19 @@
+spring:
+  batch:
+    job:
+      enabled: false
+
+  datasource:
+    meta:
+      hikari:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://localhost:3307/batch_domain
+        username: root
+        password: 1q2w3e4r1!
+
+    domain:
+      hikari:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://localhost:3307/batch_meta
+        username: root
+        password: 1q2w3e4r1!
