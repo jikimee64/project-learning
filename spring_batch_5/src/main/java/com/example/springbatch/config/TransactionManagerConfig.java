@@ -13,8 +13,8 @@ import org.springframework.boot.jdbc.metadata.DataSourcePoolMetadataProvider;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -23,25 +23,20 @@ import org.springframework.transaction.PlatformTransactionManager;
 @RequiredArgsConstructor
 @EnableConfigurationProperties({JpaProperties.class, HibernateProperties.class})
 public class TransactionManagerConfig {
-    public static final String DOMAIN_ENTITY_MANAGER_FACTORY = "domainEntityManagerFactory";
-    public static final String META_TRANSACTION_MANAGER = "metaTransactionManager";
-    public static final String DOMAIN_TRANSACTION_MANAGER = "domainTransactionManager";
+    public static final String MSSQL_TRANSACTION_MANAGER = "mssqlTransactionManager";
+    public static final String MSSQL_ENTITY_MANAGER_FACTORY = "mssqlEntityManagerFactory";
+
+    public static final String MYSQL_TRANSACTION_MANAGER = "mysqlTransactionManager";
+    public static final String MYSQL_ENTITY_MANAGER_FACTORY = "mysqlEntityManagerFactory";
 
     private final JpaProperties jpaProperties;
     private final HibernateProperties hibernateProperties;
     private final ObjectProvider<Collection<DataSourcePoolMetadataProvider>> metadataProviders;
     private final EntityManagerFactoryBuilder entityManagerFactoryBuilder;
 
-
-    @Bean(name = META_TRANSACTION_MANAGER)
-    public PlatformTransactionManager metaTransactionManager(
-        @Qualifier(DataSourceConfig.META_DATASOURCE) DataSource dataSource) {
-        return new DataSourceTransactionManager(dataSource);
-    }
-
-
-    @Bean(name = DOMAIN_ENTITY_MANAGER_FACTORY)
-    public LocalContainerEntityManagerFactoryBean domainEntityManagerFactory(@Qualifier(DataSourceConfig.DOMAIN_DATASOURCE) DataSource dataSource)  {
+    @Primary
+    @Bean(name = MYSQL_ENTITY_MANAGER_FACTORY)
+    public LocalContainerEntityManagerFactoryBean mysqlEntityManagerFactory(@Qualifier(DataSourceConfig.MYSQL_DATASOURCE) DataSource dataSource)  {
         return EntityManagerFactoryCreator.builder()
             .properties(jpaProperties)
             .hibernateProperties(hibernateProperties)
@@ -49,21 +44,51 @@ public class TransactionManagerConfig {
             .entityManagerFactoryBuilder(entityManagerFactoryBuilder)
             .dataSource(dataSource)
             .packages("com.example.springbatch.entity")
-            .persistenceUnit("domainUnit")
+            .persistenceUnit("mysqlUnit")
             .build()
             .create();
     }
 
-    @Bean(name = DOMAIN_TRANSACTION_MANAGER)
-    public PlatformTransactionManager domainTransactionManager(@Qualifier(DOMAIN_ENTITY_MANAGER_FACTORY) LocalContainerEntityManagerFactoryBean entityManagerFactory) {
+    @Primary
+    @Bean(name = MYSQL_TRANSACTION_MANAGER)
+    public PlatformTransactionManager mysqlTransactionManager(@Qualifier(MYSQL_ENTITY_MANAGER_FACTORY) LocalContainerEntityManagerFactoryBean entityManagerFactory) {
         return new JpaTransactionManager(Objects.requireNonNull(entityManagerFactory.getObject()));
     }
 
     @Configuration
     @EnableJpaRepositories(
         basePackages = "com.example.springbatch.repository"
-        ,entityManagerFactoryRef = DOMAIN_ENTITY_MANAGER_FACTORY
-        ,transactionManagerRef = DOMAIN_TRANSACTION_MANAGER
+        ,entityManagerFactoryRef = MYSQL_ENTITY_MANAGER_FACTORY
+        ,transactionManagerRef = MYSQL_TRANSACTION_MANAGER
     )
-    public static class DomainJpaRepositoriesConfig{}
+    public static class MysqlJpaRepositoriesConfig{}
+
+//    ====
+
+    @Bean(name = MSSQL_ENTITY_MANAGER_FACTORY)
+    public LocalContainerEntityManagerFactoryBean mssqlEntityManagerFactory(@Qualifier(DataSourceConfig.MSSQL_DATASOURCE) DataSource dataSource)  {
+        return EntityManagerFactoryCreator.builder()
+            .properties(jpaProperties)
+            .hibernateProperties(hibernateProperties)
+            .metadataProviders(metadataProviders)
+            .entityManagerFactoryBuilder(entityManagerFactoryBuilder)
+            .dataSource(dataSource)
+            .packages("com.example.springbatch.entity")
+            .persistenceUnit("mssqlUnit")
+            .build()
+            .create();
+    }
+
+    @Bean(name = MSSQL_TRANSACTION_MANAGER)
+    public PlatformTransactionManager mssqlTransactionManager(@Qualifier(MSSQL_ENTITY_MANAGER_FACTORY) LocalContainerEntityManagerFactoryBean entityManagerFactory) {
+        return new JpaTransactionManager(Objects.requireNonNull(entityManagerFactory.getObject()));
+    }
+
+    @Configuration
+    @EnableJpaRepositories(
+        basePackages = "com.example.springbatch.repository"
+        ,entityManagerFactoryRef = MSSQL_ENTITY_MANAGER_FACTORY
+        ,transactionManagerRef = MSSQL_TRANSACTION_MANAGER
+    )
+    public static class MssqlJpaRepositoriesConfig{}
 }

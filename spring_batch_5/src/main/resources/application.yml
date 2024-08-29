@@ -2,18 +2,20 @@ spring:
   batch:
     job:
       enabled: false
+    jdbc:
+      initialize-schema: never
 
   datasource:
-    meta:
+    mysql:
       hikari:
         driver-class-name: com.mysql.cj.jdbc.Driver
-        jdbc-url: jdbc:mysql://localhost:3307/batch_domain
+        jdbc-url: jdbc:mysql://localhost:3307/smilebaby_local
         username: root
         password: 1q2w3e4r1!
 
-    domain:
+    mssql:
       hikari:
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        jdbc-url: jdbc:mysql://localhost:3307/batch_meta
-        username: root
+        driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+        jdbc-url: jdbc:sqlserver://localhost:1433;databaseName=smilereader_mobile;encrypt=true;trustServerCertificate=true
+        username: sa
         password: 1q2w3e4r1!

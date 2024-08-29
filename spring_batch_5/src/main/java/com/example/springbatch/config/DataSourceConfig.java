@@ -11,29 +11,31 @@ import org.springframework.jdbc.datasource.LazyConnectionDataSourceProxy;
 
 @Configuration
 public class DataSourceConfig {
-    public static final String META_DATASOURCE = "metaDataSource";
-    public static final String DOMAIN_DATASOURCE = "domainDataSource";
+    public static final String MYSQL_DATASOURCE = "mysqlDataSource";
+    public static final String MSSQL_DATASOURCE = "mssqlDataSource";
 
     @Bean
-    @ConfigurationProperties(prefix = "spring.datasource.meta.hikari")
-    public HikariConfig metaHikariConfig() {
+    @ConfigurationProperties(prefix = "spring.datasource.mysql.hikari")
+    public HikariConfig mysqlHikariConfig() {
         return new HikariConfig();
     }
 
     @Primary
-    @Bean(META_DATASOURCE)
-    public DataSource metaDataSource() {
-        return new LazyConnectionDataSourceProxy(new HikariDataSource(metaHikariConfig()));
+    @Bean(MYSQL_DATASOURCE)
+    public DataSource mysqlDataSource() {
+        return new LazyConnectionDataSourceProxy(new HikariDataSource(mysqlHikariConfig()));
     }
 
+//
+
     @Bean
-    @ConfigurationProperties(prefix = "spring.datasource.domain.hikari")
-    public HikariConfig domainHikariConfig() {
+    @ConfigurationProperties(prefix = "spring.datasource.mssql.hikari")
+    public HikariConfig mssqlHikariConfig() {
         return new HikariConfig();
     }
 
-    @Bean(DOMAIN_DATASOURCE)
-    public DataSource domainDataSource() {
-        return new LazyConnectionDataSourceProxy(new HikariDataSource(domainHikariConfig()));
+    @Bean(MSSQL_DATASOURCE)
+    public DataSource mssqlDataSource() {
+        return new LazyConnectionDataSourceProxy(new HikariDataSource(mssqlHikariConfig()));
     }
 }
