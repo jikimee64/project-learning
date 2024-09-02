@@ -4,6 +4,8 @@ import com.example.springbatch.entity.AfterEntity;
 import com.example.springbatch.entity.BeforeEntity;
 import com.example.springbatch.repository.mysql.AfterRepository;
 import com.example.springbatch.repository.mssql.BeforeRepository;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Collections;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
@@ -50,6 +52,11 @@ public class MigrationJob {
             .reader(beforeReader())
             .processor(middleProcessor())
             .writer(afterWriter())
+            .faultTolerant() // step 실행 중에 발생하는 특정 예외 상황에서 'Step'이 중단되지 않고 지속되도록 하기 위함
+            .skip(Exception.class)
+            .noSkip(FileNotFoundException.class)
+            .noSkip(IOException.class)
+            .skipLimit(10) // 최대 10번의 예외까지는 스킵이 허용되며, 10번을 초과하면 Step이 실패
             .build();
     }
 
@@ -60,6 +67,15 @@ public class MigrationJob {
             .name("beforeReader")
             .pageSize(10)
             .methodName("findAll") // 청크 단위까지만 읽기 때문에 findAll을 하더라도 chunk 개수 만큼 사용
+            /**
+             * public interface WinRepository extends JpaRepository<WinEntity, Long> {
+             *
+             *     Page<WinEntity> findByWinGreaterThanEqual(Long win, Pageable pageable);
+             * }
+             * // 위와 같이 있을 경우 methodName에 findByWinGreaterThanEqual
+             * // arguments에 Long win 값 세팅
+             */
+            .arguments(Collections.singletonList(10L))
             .repository(beforeRepository)
             .sorts(Collections.singletonMap("documentId", Sort.Direction.ASC))
             .build();
