@@ -57,7 +57,7 @@ public class TransactionManagerConfig {
 
     @Configuration
     @EnableJpaRepositories(
-        basePackages = "com.example.springbatch.repository"
+        basePackages = "com.example.springbatch.repository.mysql"
         ,entityManagerFactoryRef = MYSQL_ENTITY_MANAGER_FACTORY
         ,transactionManagerRef = MYSQL_TRANSACTION_MANAGER
     )
@@ -86,7 +86,7 @@ public class TransactionManagerConfig {
 
     @Configuration
     @EnableJpaRepositories(
-        basePackages = "com.example.springbatch.repository"
+        basePackages = "com.example.springbatch.repository.mssql"
         ,entityManagerFactoryRef = MSSQL_ENTITY_MANAGER_FACTORY
         ,transactionManagerRef = MSSQL_TRANSACTION_MANAGER
     )
