@@ -32,7 +32,7 @@ public class MigrationJob {
     private final BeforeRepository beforeRepository;
     private final AfterRepository afterRepository;
 
-    public static final int CHUNK_SIZE = 2;
+    public static final int CHUNK_SIZE = 10;
     public static final String MIGRATION_JOB_NAME = "MIGRATION_JOB";
     public static final String STEP1_NAME = "FIRST_STEP";
 
@@ -65,7 +65,7 @@ public class MigrationJob {
     public RepositoryItemReader<BeforeEntity> beforeReader() {
         return new RepositoryItemReaderBuilder<BeforeEntity>()
             .name("beforeReader")
-            .pageSize(10)
+            .pageSize(10) // CHUNK_SIZE 사이즈와 동일하게 구성
             .methodName("findAll") // 청크 단위까지만 읽기 때문에 findAll을 하더라도 chunk 개수 만큼 사용
             /**
              * public interface WinRepository extends JpaRepository<WinEntity, Long> {

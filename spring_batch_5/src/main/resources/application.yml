@@ -13,10 +13,10 @@ spring:
   datasource:
     mysql:
       hikari:
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        jdbc-url: jdbc:mysql://localhost:3307/smilebaby_local
-        username: root
-        password: 1q2w3e4r1!
+        driver-class-name: org.postgresql.Driver
+        jdbc-url: jdbc:postgresql://localhost:5432/smilebaby_local
+        username: postgres
+        password: postgres
 
     mssql:
       hikari:
